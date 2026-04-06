@@ -69,6 +69,133 @@ var layerODP = L.layerGroup().addTo(map);
 var layerODC = L.layerGroup().addTo(map);
 var layerSektor = L.layerGroup().addTo(map);
 
+// ==========================================
+// FILTER DAERAH — 33 KODE AREA MALANG RAYA
+// ==========================================
+const AREA_CODES = [
+    'APG','BLB','BLR','BNR','BRG','BTU','CAT','DNO','DPT',
+    'GDG','GDI','GKW','KBN','KEP','KLJ','KPU','LDY','LWG',
+    'MLG','NGU','NTG','PAN','PGK','PKS','SBM','SBP','SGS',
+    'SNT','SWJ','TMP','TUL','TUR','WGI'
+];
+let activeMapFilter = null; // kode area yg aktif atau null
+
+// Render chip kode area saat halaman siap
+document.addEventListener('DOMContentLoaded', () => { initAreaChips(); });
+function initAreaChips() {
+    const container = document.getElementById('area-code-chips'); if (!container) return;
+    AREA_CODES.forEach(code => {
+        const chip = document.createElement('span');
+        chip.id = `chip-${code}`;
+        chip.innerText = code;
+        chip.style.cssText = 'display:inline-block; padding:2px 7px; border-radius:10px; font-size:9px; font-weight:bold; cursor:pointer; border:1px solid #ff9800; color:#e65100; background:#fff3e0; transition:0.2s;';
+        chip.onclick = () => { document.getElementById('map-filter-input').value = code; applyMapFilter(); };
+        chip.onmouseover = () => { if (activeMapFilter !== code) chip.style.background = '#ffe0b2'; };
+        chip.onmouseout = () => { if (activeMapFilter !== code) chip.style.background = '#fff3e0'; };
+        container.appendChild(chip);
+    });
+}
+
+function suggestAreaCodes(val) {
+    // Highlight chip yang cocok saat user mengetik
+    AREA_CODES.forEach(code => {
+        const chip = document.getElementById(`chip-${code}`);
+        if (!chip) return;
+        if (val && code.startsWith(val)) {
+            chip.style.background = '#ff9800'; chip.style.color = 'white';
+        } else {
+            chip.style.background = activeMapFilter === code ? '#e65100' : '#fff3e0';
+            chip.style.color = activeMapFilter === code ? 'white' : '#e65100';
+        }
+    });
+}
+
+function applyMapFilter() {
+    const input = document.getElementById('map-filter-input');
+    const code = input ? input.value.trim().toUpperCase() : '';
+    if (!code) { clearMapFilter(); return; }
+    // Cek apakah kode valid
+    if (!AREA_CODES.includes(code) && code.length > 0) {
+        // Coba cari partial match
+        const match = AREA_CODES.find(c => c.startsWith(code));
+        if (match) { input.value = match; applyMapFilter(); return; }
+        alert(`⚠️ Kode area "${code}" tidak dikenali.\nKode yang tersedia: ${AREA_CODES.join(', ')}`);
+        return;
+    }
+    activeMapFilter = code;
+    // Update chip highlight
+    AREA_CODES.forEach(c => {
+        const chip = document.getElementById(`chip-${c}`);
+        if (!chip) return;
+        if (c === code) { chip.style.background = '#e65100'; chip.style.color = 'white'; }
+        else { chip.style.background = '#fff3e0'; chip.style.color = '#e65100'; }
+    });
+    // Update badge & clear button
+    const badge = document.getElementById('filter-active-badge');
+    if (badge) { badge.style.display = 'inline-block'; badge.innerText = `✓ ${code}`; }
+    const btnClear = document.getElementById('btn-clear-filter');
+    if (btnClear) { btnClear.style.display = 'block'; btnClear.innerText = `✕ Hapus Filter [${code}] — Tampilkan Semua`; }
+    // Terapkan filter ke semua batch layer yang sudah aktif
+    filterActiveLayers(code);
+    console.log(`🗺️ Filter Daerah aktif: ${code}`);
+}
+
+function clearMapFilter() {
+    activeMapFilter = null;
+    const input = document.getElementById('map-filter-input'); if (input) input.value = '';
+    const badge = document.getElementById('filter-active-badge'); if (badge) badge.style.display = 'none';
+    const btnClear = document.getElementById('btn-clear-filter'); if (btnClear) btnClear.style.display = 'none';
+    // Reset semua chip
+    AREA_CODES.forEach(c => {
+        const chip = document.getElementById(`chip-${c}`);
+        if (chip) { chip.style.background = '#fff3e0'; chip.style.color = '#e65100'; }
+    });
+    // Reload semua batch layer tanpa filter
+    reloadAllActiveLayers();
+}
+
+function filterActiveLayers(code) {
+    // Untuk setiap batch layer yang aktif, filter fiturnya berdasarkan kode area
+    for (const catKey in activeCategoryLayers) {
+        if (activeCategoryLayers[catKey]) {
+            const [fileId, cat] = catKey.split(/-(.+)/); // split pada - pertama saja
+            reloadBatchLayer(fileId, cat, code);
+        }
+    }
+}
+
+function reloadAllActiveLayers() {
+    for (const catKey in activeCategoryLayers) {
+        const parts = catKey.match(/^(.+?)-([A-Z]+)$/);
+        if (parts) {
+            const fileId = parts[1]; const cat = parts[2];
+            reloadBatchLayer(fileId, cat, null);
+        }
+    }
+}
+
+function reloadBatchLayer(fileId, cat, filterCode) {
+    const catKey = `${fileId}-${cat}`;
+    if (!activeCategoryLayers[catKey]) return;
+    // Hapus layer lama
+    map.removeLayer(activeCategoryLayers[catKey]);
+    delete activeCategoryLayers[catKey];
+    const geoData = cachedGeoJson[fileId]; if (!geoData || !geoData.features) return;
+    let features = geoData.features.filter(f => getFeatureCategory(f) === cat);
+    if (filterCode) {
+        features = features.filter(f => {
+            const name = (f.properties && f.properties.name ? f.properties.name : '').toUpperCase();
+            const desc = (f.properties && f.properties.description ? f.properties.description : '').toUpperCase();
+            return name.includes(filterCode) || desc.includes(filterCode);
+        });
+    }
+    if (features.length === 0) return;
+    const layer = createBatchLayer(fileId, cat, features);
+    layer.addTo(map);
+    activeCategoryLayers[catKey] = layer;
+}
+
+
 function syncFirebaseData() {
     db.collection("employees").onSnapshot((snapshot) => {
         var container = document.getElementById('employee-list');
@@ -292,7 +419,15 @@ function toggleCategoryBatch(fileId, cat) {
     if (isChecked) {
         if (!activeCategoryLayers[catKey]) {
             const geoData = cachedGeoJson[fileId]; if (!geoData || !geoData.features) return;
-            const features = geoData.features.filter(f => getFeatureCategory(f) === cat);
+            // PERFORMA: Terapkan filter daerah aktif saat membuat layer baru
+            let features = geoData.features.filter(f => getFeatureCategory(f) === cat);
+            if (activeMapFilter) {
+                features = features.filter(f => {
+                    const name = (f.properties && f.properties.name ? f.properties.name : '').toUpperCase();
+                    const desc = (f.properties && f.properties.description ? f.properties.description : '').toUpperCase();
+                    return name.includes(activeMapFilter) || desc.includes(activeMapFilter);
+                });
+            }
             if (features.length === 0) return;
 
             const layer = createBatchLayer(fileId, cat, features);
@@ -543,42 +678,68 @@ function toggleEntireFile(fileId, isChecked) {
 // SEARCH ODP/ODC & RADIUS SCAN
 // ==========================================
 function cariTitikAset() {
-    var input = document.getElementById('search-aset').value.toUpperCase(); if (!input) return alert("Masukkan nama aset!");
-    var found = false; var targetLayer = null; let openedFiles = new Map();
+    var rawInput = document.getElementById('search-aset').value.trim();
+    if (!rawInput) return alert("Masukkan nama aset!");
+    var input = rawInput.toUpperCase();
+    var found = false; var targetLeafletLayer = null; let openedFiles = new Map();
+
+    // ==============================================
+    // SMART SEARCH ENGINE
+    // Logika: Cari nama yang cocok, lalu cari juga
+    // semua aset yang berada dalam JALUR / GRUP yang sama.
+    // Contoh: Cari "FA 12" → tampilkan semua ODP, ODC,
+    // Tiang, dan Kabel yang namanya mengandung "FA 12"
+    // ==============================================
     for (let fileId in cachedGeoJson) {
         let geoData = cachedGeoJson[fileId];
-        if (geoData.features) {
-            geoData.features.forEach((f, index) => {
-                if (!f.properties || !f.properties.name) return;
-                if (f.properties.name.toUpperCase().includes(input)) {
-                    found = true; let cat = getFeatureCategory(f);
-                    openedFiles.set(fileId, geoData.fileName || "Database KML");
-                    // Aktifkan kategori via batch
-                    let parentChk = document.getElementById(`chk-${fileId}-${cat}`);
-                    if (parentChk && !parentChk.checked) { parentChk.checked = true; toggleCategoryBatch(fileId, cat); }
-                    // Expand body
-                    let body = document.getElementById(`kml-body-${fileId}`); let chevron = document.getElementById(`kml-chevron-${fileId}`);
-                    if (body && body.style.display === 'none') { body.style.display = 'block'; if (chevron) chevron.style.transform = "rotate(180deg)"; }
-                    // Cari layer individual untuk fokus
-                    if (!targetLayer) {
-                        let catKey = `${fileId}-${cat}`;
-                        if (activeCategoryLayers[catKey]) {
-                            activeCategoryLayers[catKey].eachLayer(function (l) {
-                                if (!targetLayer && l.feature && l.feature.properties && l.feature.properties.name && l.feature.properties.name.toUpperCase().includes(input)) {
-                                    targetLayer = l;
-                                }
-                            });
-                        }
-                    }
-                }
-            });
-        }
+        if (!geoData.features) continue;
+
+        // Cek apakah ada minimal 1 fitur yang namanya cocok
+        const anyMatch = geoData.features.some(f => f.properties && f.properties.name && f.properties.name.toUpperCase().includes(input));
+        if (!anyMatch) continue;
+
+        found = true;
+        openedFiles.set(fileId, geoData.fileName || "Database KML");
+
+        // Expand card
+        let body = document.getElementById(`kml-body-${fileId}`); let chevron = document.getElementById(`kml-chevron-${fileId}`);
+        if (body && body.style.display === 'none') { body.style.display = 'block'; if (chevron) chevron.style.transform = "rotate(180deg)"; }
+
+        // Aktifkan SEMUA kategori yang relevan (seluruh hierarki distribusi)
+        // ODC -> ODP -> TIANG LISTRIK -> TIANG TELKOM -> JALUR KABEL
+        ['ODC', 'ODP', 'TL', 'TIANG', 'KABEL'].forEach(cat => {
+            // Cek apakah kategori ini punya fitur yang cocok
+            const hasRelevant = geoData.features.some(f => getFeatureCategory(f) === cat && f.properties && f.properties.name && f.properties.name.toUpperCase().includes(input));
+            if (!hasRelevant) return;
+
+            let parentChk = document.getElementById(`chk-${fileId}-${cat}`);
+            if (parentChk && !parentChk.checked) { parentChk.checked = true; }
+
+            // Buat layer khusus hanya untuk fitur yang cocok (override batch)
+            const catKey = `${fileId}-${cat}`;
+            if (activeCategoryLayers[catKey]) { map.removeLayer(activeCategoryLayers[catKey]); delete activeCategoryLayers[catKey]; }
+
+            const matchedFeatures = geoData.features.filter(f => getFeatureCategory(f) === cat && f.properties && f.properties.name && f.properties.name.toUpperCase().includes(input));
+            if (matchedFeatures.length === 0) return;
+
+            const layer = createBatchLayer(fileId, cat, matchedFeatures);
+            layer.addTo(map);
+            activeCategoryLayers[catKey] = layer;
+
+            // Ambil target untuk fly-to (prioritas ODP/ODC)
+            if (!targetLeafletLayer && (cat === 'ODP' || cat === 'ODC')) {
+                layer.eachLayer(l => { if (!targetLeafletLayer) targetLeafletLayer = l; });
+            } else if (!targetLeafletLayer) {
+                layer.eachLayer(l => { if (!targetLeafletLayer) targetLeafletLayer = l; });
+            }
+        });
     }
-    if (found && targetLayer) {
+
+    if (found && targetLeafletLayer) {
         if (openedFiles.size > 0) showActiveKmlToast(openedFiles);
-        if (targetLayer.getBounds) { map.flyToBounds(targetLayer.getBounds(), { maxZoom: 19 }); }
-        else if (targetLayer.getLatLng) { map.flyTo(targetLayer.getLatLng(), 19); }
-        if (targetLayer.openPopup) targetLayer.openPopup();
+        if (targetLeafletLayer.getBounds) { map.flyToBounds(targetLeafletLayer.getBounds(), { maxZoom: 19 }); }
+        else if (targetLeafletLayer.getLatLng) { map.flyTo(targetLeafletLayer.getLatLng(), 19); }
+        if (targetLeafletLayer.openPopup) targetLeafletLayer.openPopup();
     } else if (found) {
         if (openedFiles.size > 0) showActiveKmlToast(openedFiles);
     }

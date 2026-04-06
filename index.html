@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,10 +8,12 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/@geoman-io/leaflet-geoman-free@latest/dist/leaflet-geoman.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/gokertanrisever/leaflet-ruler@master/src/leaflet-ruler.css" />
+    <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/gh/gokertanrisever/leaflet-ruler@master/src/leaflet-ruler.css" />
     <script src="https://unpkg.com/@mapbox/togeojson@0.16.0/togeojson.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
     <div id="login-view" class="login-container">
@@ -19,9 +22,12 @@
         <div class="login-card-wrapper">
             <div class="login-card">
                 <div style="text-align: center; margin-bottom: 20px;">
-                    <img src="logoTelkomAkses.png" alt="Telkom Akses" style="height: 99px; width: 100%; object-fit: contain; margin-bottom: 3px;">
-                    <h2 style="color: #2c3e50; margin: 0; font-size: 14px; font-weight: 800; letter-spacing: 0.5px;">INTERNAL DASHBOARD</h2>
-                    <p style="color: #7f8c8d; font-size: 10px; margin-top: 5px; font-weight: 600;">Sektor Klojen Network Management v1.1</p>
+                    <img src="logoTelkomAkses.png" alt="Telkom Akses"
+                        style="height: 99px; width: 100%; object-fit: contain; margin-bottom: 3px;">
+                    <h2 style="color: #2c3e50; margin: 0; font-size: 14px; font-weight: 800; letter-spacing: 0.5px;">
+                        INTERNAL DASHBOARD</h2>
+                    <p style="color: #7f8c8d; font-size: 10px; margin-top: 5px; font-weight: 600;">Sektor Klojen Network
+                        Management v1.1</p>
                 </div>
 
                 <form id="login-form" onsubmit="prosesLogin(event)">
@@ -29,16 +35,19 @@
                         <label class="login-label">Username / NIK</label>
                         <input type="text" id="login-user" class="login-input" placeholder="Masukkan Username" required>
                     </div>
-                    
+
                     <div style="margin-bottom: 25px; text-align: left;">
                         <label class="login-label">Password</label>
-                        <input type="password" id="login-pass" class="login-input" placeholder="Masukkan Password" required>
+                        <input type="password" id="login-pass" class="login-input" placeholder="Masukkan Password"
+                            required>
                     </div>
-                    
+
                     <button type="submit" class="login-btn" id="btn-login-submit">LOGIN</button>
                 </form>
-                
-                <div id="login-error" style="display: none; background: #fee2e2; color: #c0392b; padding: 12px; border-radius: 6px; font-size: 11px; font-weight: bold; text-align: center; margin-top: 15px; border: 1px solid #f5c6cb;">Username atau Password salah.</div>
+
+                <div id="login-error"
+                    style="display: none; background: #fee2e2; color: #c0392b; padding: 12px; border-radius: 6px; font-size: 11px; font-weight: bold; text-align: center; margin-top: 15px; border: 1px solid #f5c6cb;">
+                    Username atau Password salah.</div>
             </div>
         </div>
     </div>
@@ -46,56 +55,109 @@
     <div class="wrapper" id="dashboard-view" style="display: none;">
         <header>
             <div style="display: flex; align-items: center; gap: 10px;">
-                <img src="logoTelkomAkses.png" alt="Logo" height="80" style="filter: brightness(0) invert(1); margin-right: 10px;">
+                <img src="logoTelkomAkses.png" alt="Logo" height="80"
+                    style="filter: brightness(0) invert(1); margin-right: 10px;">
                 <strong>Telkom Akses Malang</strong> | Network Management
             </div>
             <div style="font-size: 13px; opacity: 0.9; display: flex; align-items: center; gap: 15px;">
-                <span>User: <span id="display-logged-user" style="font-weight:bold; color:#ffeb3b;">Admin</span> | v1.1</span>
-                <button onclick="location.reload()" style="background: rgba(255,255,255,0.2); color: white; border: 1px solid white; padding: 5px 15px; border-radius: 20px; cursor: pointer; font-size: 12px; font-weight: bold; transition: 0.3s;" onmouseover="this.style.background='white'; this.style.color='#ed1e28';" onmouseout="this.style.background='rgba(255,255,255,0.2)'; this.style.color='white';">LOGOUT</button>
+                <span>User: <span id="display-logged-user" style="font-weight:bold; color:#ffeb3b;">Admin</span> |
+                    v1.1</span>
+                <button onclick="location.reload()"
+                    style="background: rgba(255,255,255,0.2); color: white; border: 1px solid white; padding: 5px 15px; border-radius: 20px; cursor: pointer; font-size: 12px; font-weight: bold; transition: 0.3s;"
+                    onmouseover="this.style.background='white'; this.style.color='#ed1e28';"
+                    onmouseout="this.style.background='rgba(255,255,255,0.2)'; this.style.color='white';">LOGOUT</button>
             </div>
         </header>
 
         <div class="main-container" style="position: relative;">
             <div class="content" style="width: 100%; height: 100%; position: relative;">
                 <div id="map" style="position: absolute; top:0; left:0; width:100%; height:100%;"></div>
-                
-                <div class="top-left-panel" style="position: absolute; top: 85px; left: 55px; z-index: 1000; display: flex; flex-direction: column; gap: 8px; pointer-events: none;">
+
+                <div class="top-left-panel"
+                    style="position: absolute; top: 85px; left: 55px; z-index: 1000; display: flex; flex-direction: column; gap: 8px; pointer-events: none;">
                     <div style="display: flex; flex-direction: row; gap: 8px;">
-                        <div class="info-card" style="border-left: 4px solid #ed1e28; pointer-events: auto; background: rgba(255,255,255,0.95); backdrop-filter: blur(5px); margin-bottom: 0; padding: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); width: 230px;">
-                            <div class="info-title" style="margin-bottom: 5px; font-size: 10px;">🔍 CARI ASET (ODP/ODC)</div>
-                            <input type="text" id="search-aset" placeholder="Contoh: ODP-KLJ-01" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 11px;">
-                            <button onclick="cariTitikAset()" style="width: 100%; margin-top: 5px; background: #B6252A; color: white; border: none; padding: 6px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold; transition: 0.3s;">Cari & Fokus</button>
+                        <div class="info-card"
+                            style="border-left: 4px solid #ed1e28; pointer-events: auto; background: rgba(255,255,255,0.95); backdrop-filter: blur(5px); margin-bottom: 0; padding: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); width: 230px;">
+                            <div class="info-title" style="margin-bottom: 5px; font-size: 10px;">🔍 CARI ASET (ODP/ODC)
+                            </div>
+                            <input type="text" id="search-aset" placeholder="Contoh: ODP-KLJ-01"
+                                style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 11px;">
+                            <button onclick="cariTitikAset()"
+                                style="width: 100%; margin-top: 5px; background: #B6252A; color: white; border: none; padding: 6px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold; transition: 0.3s;">Cari
+                                & Fokus</button>
                         </div>
 
-                        <div class="info-card" style="border-left: 4px solid #ed1e28; pointer-events: auto; background: rgba(255,255,255,0.95); backdrop-filter: blur(5px); margin-bottom: 0; padding: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); width: 230px;">
-                            <div class="info-title" style="color: #B6252A; margin-bottom: 5px; font-size: 10px;">🔍 PINDAI RADIUS (100 METER)</div>
-                            <input type="text" id="search-koordinat" placeholder="Lat, Lng (Cth: -7.96, 112.61)" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 11px;">
-                            <button onclick="cariTitikKoordinat()" style="width: 100%; margin-top: 5px; background: #B6252A; color: white; border: none; padding: 6px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold; transition: 0.3s;">Cari & Pindai Area</button>
+                        <div class="info-card"
+                            style="border-left: 4px solid #ed1e28; pointer-events: auto; background: rgba(255,255,255,0.95); backdrop-filter: blur(5px); margin-bottom: 0; padding: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); width: 230px;">
+                            <div class="info-title" style="color: #B6252A; margin-bottom: 5px; font-size: 10px;">🔍
+                                PINDAI RADIUS (100 METER)</div>
+                            <input type="text" id="search-koordinat" placeholder="Lat, Lng (Cth: -7.96, 112.61)"
+                                style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 11px;">
+                            <button onclick="cariTitikKoordinat()"
+                                style="width: 100%; margin-top: 5px; background: #B6252A; color: white; border: none; padding: 6px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold; transition: 0.3s;">Cari
+                                & Pindai Area</button>
+                        </div>
+
+                        <!-- PANEL FILTER DAERAH PETA -->
+                        <div class="info-card" id="map-filter-panel"
+                            style="border-left: 4px solid #ff9800; pointer-events: auto; background: rgba(255,255,255,0.95); backdrop-filter: blur(5px); margin-bottom: 0; padding: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); width: 260px;">
+                            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:5px;">
+                                <div class="info-title" style="color: #e65100; font-size: 10px; margin:0;">🗺️ FILTER TAMPILAN DAERAH</div>
+                                <span id="filter-active-badge" style="display:none; background:#e65100; color:white; font-size:8px; font-weight:bold; padding:2px 6px; border-radius:10px; animation: pulse 1.5s infinite;">AKTIF</span>
+                            </div>
+                            <div style="display:flex; gap:4px; margin-bottom:5px;">
+                                <input type="text" id="map-filter-input" placeholder="Ketik kode (KLJ, MLG...)"
+                                    style="flex:1; padding:6px; border:1px solid #ff9800; border-radius:4px; font-size:11px; text-transform:uppercase;"
+                                    oninput="this.value=this.value.toUpperCase(); suggestAreaCodes(this.value)"
+                                    onkeypress="if(event.key==='Enter') applyMapFilter()">
+                                <button onclick="applyMapFilter()" title="Terapkan Filter (Enter)"
+                                    style="background:#e65100; color:white; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:16px; transition:0.2s;"
+                                    onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">↵</button>
+                            </div>
+                            <!-- Chip kode area cepat -->
+                            <div style="display:flex; flex-wrap:wrap; gap:3px; max-height:72px; overflow-y:auto;" id="area-code-chips"></div>
+                            <button onclick="clearMapFilter()" id="btn-clear-filter"
+                                style="display:none; width:100%; margin-top:6px; background:#fff3e0; color:#e65100; border:1px solid #ff9800; padding:5px; border-radius:4px; cursor:pointer; font-size:10px; font-weight:bold;">✕ Hapus Filter — Tampilkan Semua</button>
                         </div>
                     </div>
 
-                    <div id="active-kml-toast" style="display:none; pointer-events: auto; background: rgba(255,255,255,0.95); padding: 10px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); border-left: 4px solid #ed1e28; backdrop-filter: blur(5px); transition: 0.3s; width: 280px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <div id="active-kml-toast"
+                        style="display:none; pointer-events: auto; background: rgba(255,255,255,0.95); padding: 10px; border-radius: 8px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); border-left: 4px solid #ed1e28; backdrop-filter: blur(5px); transition: 0.3s; width: 280px;">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                             <b style="font-size: 11px; color: #b6252a;">📂 File KML Terdeteksi:</b>
-                            <span onclick="closeAndClearKmlToast()" style="cursor:pointer; font-weight:bold; font-size:16px; color:#888; line-height: 1;">×</span>
+                            <span onclick="closeAndClearKmlToast()"
+                                style="cursor:pointer; font-weight:bold; font-size:16px; color:#888; line-height: 1;">×</span>
                         </div>
-                        <ul id="active-kml-list" style="margin: 0; font-size: 10px; color: #333; line-height: 1.5; font-weight: bold; padding-left: 0;"></ul>
+                        <ul id="active-kml-list"
+                            style="margin: 0; font-size: 10px; color: #333; line-height: 1.5; font-weight: bold; padding-left: 0;">
+                        </ul>
                     </div>
                 </div>
 
                 <div class="dash-fab-container">
                     <div class="dash-fab-menu" id="dash-fab-menu">
-                        <button class="dash-fab-item" onclick="toggleModal('kml-modal')"><span class="label">6. Lihat Database KML</span></button>
-                        <button class="dash-fab-item" onclick="alert('Modul Stakeholder sedang dalam tahap pengembangan.')"><span class="label">5. Stakeholder (Soon)</span></button>
-                        <button class="dash-fab-item" onclick="alert('Modul Kompetitor sedang dalam tahap pengembangan.')"><span class="label">4. Kompetitor (Soon)</span></button>
-                        <button class="dash-fab-item" onclick="toggleModal('modal-alpro')"><span class="label">3. Data Alpro (Input)</span></button>
-                        <button class="dash-fab-item" onclick="toggleModal('modal-alker')"><span class="label">2. Alker Sarker (Inventory)</span></button>
-                        <button class="dash-fab-item" onclick="toggleModal('modal-teknisi')"><span class="label">1. Data Teknisi & Petugas</span></button>
+                        <button class="dash-fab-item" onclick="toggleModal('kml-modal')"><span class="label">6. Lihat
+                                Database KML</span></button>
+                        <button class="dash-fab-item"
+                            onclick="alert('Modul Stakeholder sedang dalam tahap pengembangan.')"><span class="label">5.
+                                Stakeholder (Soon)</span></button>
+                        <button class="dash-fab-item"
+                            onclick="alert('Modul Kompetitor sedang dalam tahap pengembangan.')"><span class="label">4.
+                                Kompetitor (Soon)</span></button>
+                        <button class="dash-fab-item" onclick="toggleModal('modal-alpro')"><span class="label">3. Data
+                                Alpro (Input)</span></button>
+                        <button class="dash-fab-item" onclick="toggleModal('modal-alker')"><span class="label">2. Alker
+                                Sarker (Inventory)</span></button>
+                        <button class="dash-fab-item" onclick="toggleModal('modal-teknisi')"><span class="label">1. Data
+                                Teknisi & Petugas</span></button>
                     </div>
                     <button class="dash-fab-main" id="dash-fab-btn" onclick="toggleDashMenu()">+</button>
                 </div>
 
-                <div id="loading-indicator" style="display:none; position: absolute; top: 10px; right: 10px; z-index: 1000; background: white; padding: 5px 10px; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.2);">⌛ Memproses KML...</div>
+                <div id="loading-indicator"
+                    style="display:none; position: absolute; top: 10px; right: 10px; z-index: 1000; background: white; padding: 5px 10px; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.2);">
+                    ⌛ Memproses KML...</div>
             </div>
         </div>
     </div>
@@ -104,24 +166,37 @@
         <div class="custom-modal-box">
             <div class="custom-modal-header">
                 <h3 style="margin: 0; font-size: 14px;">📍 Data Alpro</h3>
-                <span onclick="toggleModal('modal-alpro')" style="cursor: pointer; font-size: 24px; font-weight: bold; line-height: 1;">×</span>
+                <span onclick="toggleModal('modal-alpro')"
+                    style="cursor: pointer; font-size: 24px; font-weight: bold; line-height: 1;">×</span>
             </div>
             <div class="custom-modal-body">
                 <div id="admin-upload-section" class="info-card" style="border-left: 5px solid #ed1e28;">
                     <div class="info-title">📂 Update Data KML</div>
                     <input type="file" id="kml-upload" accept=".kml" style="font-size: 11px; width: 100%;">
-                    <div style="margin-top: 8px; padding: 7px 10px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 5px; display: flex; flex-direction: column; gap: 8px;">
+                    <div
+                        style="margin-top: 8px; padding: 7px 10px; background: #fff3cd; border: 1px solid #ffc107; border-radius: 5px; display: flex; flex-direction: column; gap: 8px;">
                         <div style="display: flex; align-items: center; gap: 8px; width: 100%;">
-                            <input type="checkbox" id="enable-region-filter" checked onchange="document.getElementById('region-filter-wrapper').style.display = this.checked ? 'block' : 'none';" style="accent-color: #ed1e28; width: 14px; height: 14px; cursor: pointer; flex-shrink: 0;">
-                            <label for="enable-region-filter" style="font-size: 10.5px; color: #555; cursor: pointer; line-height: 1.2;"><b style="color: #B6252A;">Aktifkan Filter Daerah</b> (Mencegah Lag Parah)</label>
+                            <input type="checkbox" id="enable-region-filter" checked
+                                onchange="document.getElementById('region-filter-wrapper').style.display = this.checked ? 'block' : 'none';"
+                                style="accent-color: #ed1e28; width: 14px; height: 14px; cursor: pointer; flex-shrink: 0;">
+                            <label for="enable-region-filter"
+                                style="font-size: 10.5px; color: #555; cursor: pointer; line-height: 1.2;"><b
+                                    style="color: #B6252A;">Aktifkan Filter Daerah</b> (Mencegah Lag Parah)</label>
                         </div>
                         <div id="region-filter-wrapper" style="display: block;">
-                            <input type="text" id="region-filter-code" placeholder="Kode Area (cth: KLJ, SGS, BLB)" value="KLJ" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 11px; margin-bottom: 4px;">
-                            <p style="font-size: 9px; color: #666; margin: 0; line-height: 1.3;">Hanya aset yang namanya mengandung kode ini yang akan disimpan ke database.</p>
+                            <input type="text" id="region-filter-code" placeholder="Kode Area (cth: KLJ, SGS, BLB)"
+                                value="KLJ"
+                                style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; font-size: 11px; margin-bottom: 4px;">
+                            <p style="font-size: 9px; color: #666; margin: 0; line-height: 1.3;">Hanya aset yang namanya
+                                mengandung kode ini yang akan disimpan ke database.</p>
                         </div>
                     </div>
-                    <p style="font-size: 9px; color: #666; margin-top: 5px; margin-bottom: 10px;">*Hanya Admin yang dapat mengubah data spasial.</p>
-                    <button onclick="toggleModal('modal-alpro'); toggleModal('kml-modal')" style="width: 100%; background: #fff; color: #B6252A; border: 1px solid #B6252A; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold; transition: 0.3s;" onmouseover="this.style.background='#fdf2f2'" onmouseout="this.style.background='#fff'">Lihat Database KML (<span id="kml-count-badge">0</span>)</button>
+                    <p style="font-size: 9px; color: #666; margin-top: 5px; margin-bottom: 10px;">*Hanya Admin yang
+                        dapat mengubah data spasial.</p>
+                    <button onclick="toggleModal('modal-alpro'); toggleModal('kml-modal')"
+                        style="width: 100%; background: #fff; color: #B6252A; border: 1px solid #B6252A; padding: 8px; border-radius: 4px; cursor: pointer; font-size: 11px; font-weight: bold; transition: 0.3s;"
+                        onmouseover="this.style.background='#fdf2f2'" onmouseout="this.style.background='#fff'">Lihat
+                        Database KML (<span id="kml-count-badge">0</span>)</button>
                 </div>
                 <h3 style="font-size:13px; color:#333; margin: 15px 0 10px;">Wilayah Operasional</h3>
                 <div class="list-item" onclick="focusOffice()">📍 Kantor STO Klojen (Pusat)</div>
@@ -134,7 +209,8 @@
         <div class="custom-modal-box">
             <div class="custom-modal-header">
                 <h3 style="margin: 0; font-size: 14px;">🛠️ Alker Sarker (Inventory)</h3>
-                <span onclick="toggleModal('modal-alker')" style="cursor: pointer; font-size: 24px; font-weight: bold; line-height: 1;">×</span>
+                <span onclick="toggleModal('modal-alker')"
+                    style="cursor: pointer; font-size: 24px; font-weight: bold; line-height: 1;">×</span>
             </div>
             <div class="custom-modal-body">
                 <div class="info-card">
@@ -146,7 +222,9 @@
                         <div class="grid-item"><span id="count-tangga">0</span> Tangga</div>
                     </div>
                 </div>
-                <button id="admin-btn-inventory" onclick="toggleModal('modal-alker'); toggleModal('admin-modal')" style="width: 100%; margin-top: 10px; background: #B6252A; color: white; border: none; padding: 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">⚙️ Update Inventory</button>
+                <button id="admin-btn-inventory" onclick="toggleModal('modal-alker'); toggleModal('admin-modal')"
+                    style="width: 100%; margin-top: 10px; background: #B6252A; color: white; border: none; padding: 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">⚙️
+                    Update Inventory</button>
             </div>
         </div>
     </div>
@@ -155,15 +233,20 @@
         <div class="custom-modal-box">
             <div class="custom-modal-header">
                 <h3 style="margin: 0; font-size: 14px;">👷 Data Teknisi</h3>
-                <span onclick="toggleModal('modal-teknisi')" style="cursor: pointer; font-size: 24px; font-weight: bold; line-height: 1;">×</span>
+                <span onclick="toggleModal('modal-teknisi')"
+                    style="cursor: pointer; font-size: 24px; font-weight: bold; line-height: 1;">×</span>
             </div>
             <div class="custom-modal-body">
                 <div class="info-card" style="margin-bottom: 10px;">
-                    <div style="font-size: 12px; font-weight: bold; color: #666; margin-bottom: 4px;">JUMLAH TEKNISI</div>
-                    <div style="font-size: 22px; font-weight: bold; color: #ed1e28;"><span id="total-teknisi">0</span> Orang</div>
+                    <div style="font-size: 12px; font-weight: bold; color: #666; margin-bottom: 4px;">JUMLAH TEKNISI
+                    </div>
+                    <div style="font-size: 22px; font-weight: bold; color: #ed1e28;"><span id="total-teknisi">0</span>
+                        Orang</div>
                 </div>
                 <div id="employee-list"></div>
-                <button id="admin-btn-teknisi" onclick="toggleModal('modal-teknisi'); toggleModal('admin-modal')" style="width: 100%; margin-top: 10px; background: #B6252A; color: white; border: none; padding: 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">➕ Tambah Teknisi</button>
+                <button id="admin-btn-teknisi" onclick="toggleModal('modal-teknisi'); toggleModal('admin-modal')"
+                    style="width: 100%; margin-top: 10px; background: #B6252A; color: white; border: none; padding: 10px; border-radius: 4px; cursor: pointer; font-size: 12px;">➕
+                    Tambah Teknisi</button>
             </div>
         </div>
     </div>
@@ -172,7 +255,8 @@
         <div class="custom-modal-box" style="max-width: 450px;">
             <div class="custom-modal-header">
                 <h3 style="margin: 0; font-size: 14px;">📂 Database File KML</h3>
-                <span onclick="toggleModal('kml-modal')" style="cursor: pointer; font-size: 24px; font-weight: bold; line-height: 1;">×</span>
+                <span onclick="toggleModal('kml-modal')"
+                    style="cursor: pointer; font-size: 24px; font-weight: bold; line-height: 1;">×</span>
             </div>
             <div id="kml-database-list" class="custom-modal-body"></div>
         </div>
@@ -182,40 +266,56 @@
         <div class="custom-modal-box">
             <div class="custom-modal-header">
                 <h3 style="margin: 0; font-size: 14px;">⚙️ Admin Panel</h3>
-                <span onclick="toggleModal('admin-modal')" style="cursor: pointer; font-size: 24px; font-weight: bold; line-height: 1;">×</span>
+                <span onclick="toggleModal('admin-modal')"
+                    style="cursor: pointer; font-size: 24px; font-weight: bold; line-height: 1;">×</span>
             </div>
             <div class="custom-modal-body">
                 <div style="margin-bottom: 25px;">
                     <p style="margin-bottom: 10px; font-size: 14px;"><b>Update Stok Alat</b></p>
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                        <input type="number" id="input-splicer" placeholder="Splicer" style="padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
-                        <input type="number" id="input-opm" placeholder="OPM" style="padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
-                        <input type="number" id="input-otdr" placeholder="OTDR" style="padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
-                        <input type="number" id="input-tangga" placeholder="Tangga" style="padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                        <input type="number" id="input-splicer" placeholder="Splicer"
+                            style="padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                        <input type="number" id="input-opm" placeholder="OPM"
+                            style="padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                        <input type="number" id="input-otdr" placeholder="OTDR"
+                            style="padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                        <input type="number" id="input-tangga" placeholder="Tangga"
+                            style="padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
                     </div>
-                    <button onclick="updateInventory()" style="width: 100%; margin-top: 15px; background: #ed1e28; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold;">Update Inventaris</button>
+                    <button onclick="updateInventory()"
+                        style="width: 100%; margin-top: 15px; background: #ed1e28; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold;">Update
+                        Inventaris</button>
                 </div>
                 <hr style="border: 0; border-top: 1px solid #eee; margin: 15px 0;">
                 <div>
                     <p style="margin-bottom: 10px; font-size: 14px;"><b>Tambah Petugas Baru</b></p>
-                    <input type="text" id="add-name" placeholder="Nama Lengkap" style="width: 100%; margin-bottom: 8px; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box;">
+                    <input type="text" id="add-name" placeholder="Nama Lengkap"
+                        style="width: 100%; margin-bottom: 8px; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box;">
                     <div style="display: flex; gap: 8px; margin-bottom: 10px;">
-                        <input type="text" id="add-role" placeholder="Role" style="width: 50%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
-                        <input type="text" id="add-area" placeholder="Area" style="width: 50%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                        <input type="text" id="add-role" placeholder="Role"
+                            style="width: 50%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                        <input type="text" id="add-area" placeholder="Area"
+                            style="width: 50%; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
                     </div>
-                    <button onclick="addEmployee()" style="width: 100%; background: #ed1e28; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold;">Tambah Petugas</button>
+                    <button onclick="addEmployee()"
+                        style="width: 100%; background: #ed1e28; color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold;">Tambah
+                        Petugas</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="sv-modal" style="display:none; position: fixed; z-index: 10001; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); overflow: hidden;">
-        <div style="background: white; margin: 3% auto; width: 90%; height: 85%; max-width: 1000px; border-radius: 10px; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column;">
-            <div style="background: #B6252A; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; color: white; border-top-left-radius: 10px; border-top-right-radius: 10px;">
+    <div id="sv-modal"
+        style="display:none; position: fixed; z-index: 10001; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); overflow: hidden;">
+        <div
+            style="background: white; margin: 3% auto; width: 90%; height: 85%; max-width: 1000px; border-radius: 10px; position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column;">
+            <div
+                style="background: #B6252A; padding: 12px 20px; display: flex; justify-content: space-between; align-items: center; color: white; border-top-left-radius: 10px; border-top-right-radius: 10px;">
                 <h3 style="margin: 0; font-size: 16px;">🚶‍♂️ Google Street View</h3>
                 <span onclick="closeStreetView()" style="cursor: pointer; font-size: 24px; font-weight: bold;">×</span>
             </div>
-            <div style="flex: 1; width: 100%; background: #e5e3df;"><iframe id="sv-iframe" width="100%" height="100%" frameborder="0" style="border:0;" allowfullscreen></iframe></div>
+            <div style="flex: 1; width: 100%; background: #e5e3df;"><iframe id="sv-iframe" width="100%" height="100%"
+                    frameborder="0" style="border:0;" allowfullscreen></iframe></div>
         </div>
     </div>
 
@@ -230,10 +330,11 @@
         const firebaseConfig = { apiKey: "AIzaSyDu4pMyZ0do1Eac1hRBSPIdqluqeNZg5Yw", authDomain: "dashboard-telkom-akses-malang.firebaseapp.com", projectId: "dashboard-telkom-akses-malang", storageBucket: "dashboard-telkom-akses-malang.firebasestorage.app", messagingSenderId: "1053314366120", appId: "1:1053314366120:web:ad3aab8eaa257a6459a09d", measurementId: "G-NPJMV1RP5R" };
         firebase.initializeApp(firebaseConfig); const db = firebase.firestore();
         var officeCoord = [-7.9644469, 112.6155467]; var map = L.map('map', { preferCanvas: true }).setView(officeCoord, 16);
-        var satelliteLayer = L.tileLayer('http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}', { maxZoom: 20, subdomains:['mt0','mt1','mt2','mt3'], attribution: '© Google Satellite' }).addTo(map);
+        var satelliteLayer = L.tileLayer('http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}', { maxZoom: 20, subdomains: ['mt0', 'mt1', 'mt2', 'mt3'], attribution: '© Google Satellite' }).addTo(map);
         var streetLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© Telkom Akses Malang' });
         L.control.layers({ "Tampilan Satelit": satelliteLayer, "Peta Jalan 2D": streetLayer }, null, { collapsed: false }).addTo(map);
     </script>
     <script src="script.js"></script>
 </body>
+
 </html>
