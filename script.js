@@ -144,18 +144,29 @@ function reloadBatchLayer(fileId, cat, filterCode) {
 }
 
 // Helper: ekstrak identifier rute dari nama aset
-// Contoh: "ODP-KLJ-FA/01 DS 01 (13-14)" → ["KLJ-FA/01", "FA/01", "KLJ"]
-// Sehingga kabel "DS-KLJ-FA/01" juga bisa ditemukan saat cari ODP
+// Akan membersihkan prefix tapi menyimpan berbagai kemungkinan identifier
 function extractRouteIdentifiers(name) {
     if (!name) return [];
     const ids = [name]; // selalu include nama asli
-    // Hapus prefix tipe (ODP-, ODC-, DS-, TIANG-, TL-)
-    const withoutPrefix = name.replace(/^(ODP|ODC|DS|TIANG|TL|PS|OPD)-/i, '').trim();
+    
+    // Hapus prefix tipe
+    const withoutPrefix = name.replace(/^(ODP|ODC|DS|TIANG|TL|PS|OPD)[\-\s\/]+/i, '').trim();
     if (withoutPrefix && withoutPrefix !== name) ids.push(withoutPrefix);
-    // Ekstrak pola FA/XX atau area-FA/XX
-    const faMatch = name.match(/([A-Z]{2,4}-FA\/\d+|FA\/\d+)/i);
+    
+    // Ekstrak pola FA XX secara spesifik
+    const faMatch = name.match(/FA[\-\s\/]*\d+/i);
     if (faMatch) ids.push(faMatch[0].toUpperCase());
-    return [...new Set(ids.map(s => s.toUpperCase()))];
+    
+    return [...new Set(ids.map(s => s.toUpperCase().trim()))];
+}
+
+// Buat regex pencarian yang fleksibel 
+// (spasi, strip, garis miring dianggap sama)
+// Contoh: "FA 12" -> cocok dengan "FA/12" atau "FA-12"
+function buildFuzzyRegex(str) {
+    let escaped = str.trim().toUpperCase().replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
+    let fuzzy = escaped.replace(/(\\\/|\\-|\s)+/g, '[\\s\\/\\-_]*');
+    return new RegExp(fuzzy + "(?![A-Z])", "i");
 }
 
 // Cek apakah feature cocok dengan query pencarian (termasuk rute terkait)
@@ -164,21 +175,16 @@ function featureMatchesQuery(f, query) {
     const name = f.properties.name.toUpperCase();
     const desc = (f.properties.description || '').toUpperCase();
     
-    // Match langsung string penuh
-    if (name.includes(query) || desc.includes(query)) return true;
+    // Match via fuzzy regex pada string utuh
+    const queryRegex = buildFuzzyRegex(query);
+    if (queryRegex.test(name) || queryRegex.test(desc)) return true;
     
-    // Match via route identifier (cari kabel terkait)
+    // Match via route identifier (agar kabel ODP yg sesuai ikut tampil)
     const ids = extractRouteIdentifiers(query);
     for (const id of ids) {
         if (id.length < 3) continue;
-        
-        // Buat regex boundary agar tidak over-matching 
-        // Contoh: cari "FA" TIDAK AKAN cocok dengan "FAC"
-        // cari "FAC" TIDAK AKAN cocok dengan "FACILITY"
-        const escapedId = id.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
-        const regex = new RegExp(escapedId + "(?![A-Z])", "i");
-        
-        if (regex.test(name) || regex.test(desc)) return true;
+        const routeRegex = buildFuzzyRegex(id);
+        if (routeRegex.test(name) || routeRegex.test(desc)) return true;
     }
     return false;
 }
@@ -695,8 +701,16 @@ function cariTitikAset() {
         let chevron = document.getElementById(`kml-chevron-${fileId}`);
         if (body && body.style.display === 'none') { body.style.display = 'block'; if (chevron) chevron.style.transform = "rotate(180deg)"; }
 
-        // Aktifkan SEMUA kategori dalam hierarki distribusi: ODC → ODP → TL → TIANG → KABEL
-        ['ODC', 'ODP', 'TL', 'TIANG', 'KABEL'].forEach(cat => {
+        // Batasi kategori berdasarkan prefix pencarian agar lebih presisi
+        let targetCategories = ['ODC', 'ODP', 'TL', 'TIANG', 'KABEL'];
+        if (input.startsWith('ODP-') || input.startsWith('ODP ')) {
+            targetCategories = ['ODP', 'KABEL']; // Hanya ODP dan Kabel
+        } else if (input.startsWith('ODC-') || input.startsWith('ODC ')) {
+            targetCategories = ['ODC', 'KABEL']; // Hanya ODC dan Kabel
+        }
+
+        // Aktifkan kategori dalam hierarki distribusi yang relevan
+        targetCategories.forEach(cat => {
             // Filter fitur kategori ini yang cocok dengan query (route-aware)
             const matchedFeatures = geoData.features.filter(f =>
                 getFeatureCategory(f) === cat && featureMatchesQuery(f, input)
