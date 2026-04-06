@@ -367,12 +367,21 @@ function renderKmlCard(id, file, geoData, container) {
 
     for (let cat in grouped) {
         if (grouped[cat].length > 0) {
-            html += `<div class="layer-item" style="justify-content: space-between; background: #fafafa; border-bottom: 1px solid #eee;"><div style="display:flex; align-items:center; gap:8px;"><input type="checkbox" id="chk-${id}-${cat}" onchange="toggleCategoryBatch('${id}', '${cat}')"><label for="chk-${id}-${cat}" style="font-weight:bold; color:#b6252a; font-size: 10px;">${catLabels[cat]} (${grouped[cat].length})</label></div><span onclick="lazyLoadChildren('${id}', '${cat}')" style="cursor:pointer; font-size:18px; padding:0 5px; color:#888;">▾</span></div>`;
+            html += `<div class="layer-item" style="justify-content: space-between; background: #fafafa; border-bottom: 1px solid #eee;"><div style="display:flex; align-items:center; gap:8px;"><input type="checkbox" checked id="chk-${id}-${cat}" onchange="toggleCategoryBatch('${id}', '${cat}')"><label for="chk-${id}-${cat}" style="font-weight:bold; color:#b6252a; font-size: 10px;">${catLabels[cat]} (${grouped[cat].length})</label></div><span onclick="lazyLoadChildren('${id}', '${cat}')" style="cursor:pointer; font-size:18px; padding:0 5px; color:#888;">▾</span></div>`;
             // PERFORMA: Child container kosong, diisi saat user klik expand
             html += `<div id="child-container-${id}-${cat}" style="display:none; padding: 5px 10px 5px 25px; border-bottom: 1px solid #eee; max-height: 200px; overflow-y: auto;" data-loaded="false"></div>`;
         }
     }
     html += `</div>`; card.innerHTML = html; container.appendChild(card);
+
+    // Auto-load semua data secara default
+    setTimeout(() => {
+        for (let cat in grouped) {
+            if (grouped[cat].length > 0) {
+                toggleCategoryBatch(id, cat, true); // true = skipZoom
+            }
+        }
+    }, 100);
 }
 
 // LAZY LOAD: Render child checkboxes hanya saat user klik expand
@@ -410,7 +419,7 @@ function toggleKmlBody(id) {
 // ==========================================
 // TOGGLE CATEGORY - BATCH (1 LAYER UNTUK SELURUH KATEGORI)
 // ==========================================
-function toggleCategoryBatch(fileId, cat) {
+function toggleCategoryBatch(fileId, cat, skipZoom = false) {
     let isChecked = document.getElementById(`chk-${fileId}-${cat}`).checked;
     let catKey = `${fileId}-${cat}`;
 
@@ -437,7 +446,7 @@ function toggleCategoryBatch(fileId, cat) {
             activeCategoryLayers[catKey] = layer;
 
             // Fly to bounds
-            if (layer.getBounds && layer.getBounds().isValid()) {
+            if (!skipZoom && layer.getBounds && layer.getBounds().isValid()) {
                 map.fitBounds(layer.getBounds(), { padding: [30, 30], maxZoom: 17 });
             }
         }
