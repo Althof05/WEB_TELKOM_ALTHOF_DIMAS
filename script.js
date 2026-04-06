@@ -70,7 +70,7 @@ var layerODC = L.layerGroup().addTo(map);
 var layerSektor = L.layerGroup().addTo(map);
 
 // ==========================================
-// FILTER DAERAH — 33 KODE AREA MALANG RAYA
+// FILTER DAERAH — DATABASE 33 KODE AREA (TANPA UI CHIP)
 // ==========================================
 const AREA_CODES = [
     'APG','BLB','BLR','BNR','BRG','BTU','CAT','DNO','DPT',
@@ -78,66 +78,26 @@ const AREA_CODES = [
     'MLG','NGU','NTG','PAN','PGK','PKS','SBM','SBP','SGS',
     'SNT','SWJ','TMP','TUL','TUR','WGI'
 ];
-let activeMapFilter = null; // kode area yg aktif atau null
-
-// Render chip kode area saat halaman siap
-document.addEventListener('DOMContentLoaded', () => { initAreaChips(); });
-function initAreaChips() {
-    const container = document.getElementById('area-code-chips'); if (!container) return;
-    AREA_CODES.forEach(code => {
-        const chip = document.createElement('span');
-        chip.id = `chip-${code}`;
-        chip.innerText = code;
-        chip.style.cssText = 'display:inline-block; padding:2px 7px; border-radius:10px; font-size:9px; font-weight:bold; cursor:pointer; border:1px solid #ff9800; color:#e65100; background:#fff3e0; transition:0.2s;';
-        chip.onclick = () => { document.getElementById('map-filter-input').value = code; applyMapFilter(); };
-        chip.onmouseover = () => { if (activeMapFilter !== code) chip.style.background = '#ffe0b2'; };
-        chip.onmouseout = () => { if (activeMapFilter !== code) chip.style.background = '#fff3e0'; };
-        container.appendChild(chip);
-    });
-}
-
-function suggestAreaCodes(val) {
-    // Highlight chip yang cocok saat user mengetik
-    AREA_CODES.forEach(code => {
-        const chip = document.getElementById(`chip-${code}`);
-        if (!chip) return;
-        if (val && code.startsWith(val)) {
-            chip.style.background = '#ff9800'; chip.style.color = 'white';
-        } else {
-            chip.style.background = activeMapFilter === code ? '#e65100' : '#fff3e0';
-            chip.style.color = activeMapFilter === code ? 'white' : '#e65100';
-        }
-    });
-}
+let activeMapFilter = null;
 
 function applyMapFilter() {
     const input = document.getElementById('map-filter-input');
     const code = input ? input.value.trim().toUpperCase() : '';
     if (!code) { clearMapFilter(); return; }
-    // Cek apakah kode valid
-    if (!AREA_CODES.includes(code) && code.length > 0) {
-        // Coba cari partial match
+
+    // Auto-complete partial: jika ketik 'KL' otomatis jadi 'KLJ'
+    if (!AREA_CODES.includes(code)) {
         const match = AREA_CODES.find(c => c.startsWith(code));
         if (match) { input.value = match; applyMapFilter(); return; }
-        alert(`⚠️ Kode area "${code}" tidak dikenali.\nKode yang tersedia: ${AREA_CODES.join(', ')}`);
-        return;
+        // Kode tidak dikenali tapi tetap coba filter (untuk kode baru yg belum terdaftar)
     }
     activeMapFilter = code;
-    // Update chip highlight
-    AREA_CODES.forEach(c => {
-        const chip = document.getElementById(`chip-${c}`);
-        if (!chip) return;
-        if (c === code) { chip.style.background = '#e65100'; chip.style.color = 'white'; }
-        else { chip.style.background = '#fff3e0'; chip.style.color = '#e65100'; }
-    });
-    // Update badge & clear button
     const badge = document.getElementById('filter-active-badge');
     if (badge) { badge.style.display = 'inline-block'; badge.innerText = `✓ ${code}`; }
     const btnClear = document.getElementById('btn-clear-filter');
-    if (btnClear) { btnClear.style.display = 'block'; btnClear.innerText = `✕ Hapus Filter [${code}] — Tampilkan Semua`; }
-    // Terapkan filter ke semua batch layer yang sudah aktif
+    if (btnClear) { btnClear.style.display = 'block'; btnClear.innerText = `✕ Hapus Filter [${code}]`; }
     filterActiveLayers(code);
-    console.log(`🗺️ Filter Daerah aktif: ${code}`);
+    console.log(`🗺️ Filter aktif: ${code}`);
 }
 
 function clearMapFilter() {
@@ -145,39 +105,27 @@ function clearMapFilter() {
     const input = document.getElementById('map-filter-input'); if (input) input.value = '';
     const badge = document.getElementById('filter-active-badge'); if (badge) badge.style.display = 'none';
     const btnClear = document.getElementById('btn-clear-filter'); if (btnClear) btnClear.style.display = 'none';
-    // Reset semua chip
-    AREA_CODES.forEach(c => {
-        const chip = document.getElementById(`chip-${c}`);
-        if (chip) { chip.style.background = '#fff3e0'; chip.style.color = '#e65100'; }
-    });
-    // Reload semua batch layer tanpa filter
     reloadAllActiveLayers();
 }
 
 function filterActiveLayers(code) {
-    // Untuk setiap batch layer yang aktif, filter fiturnya berdasarkan kode area
     for (const catKey in activeCategoryLayers) {
-        if (activeCategoryLayers[catKey]) {
-            const [fileId, cat] = catKey.split(/-(.+)/); // split pada - pertama saja
-            reloadBatchLayer(fileId, cat, code);
-        }
+        if (!activeCategoryLayers[catKey]) continue;
+        const parts = catKey.match(/^(.+?)-([A-Z]+)$/);
+        if (parts) reloadBatchLayer(parts[1], parts[2], code);
     }
 }
 
 function reloadAllActiveLayers() {
     for (const catKey in activeCategoryLayers) {
         const parts = catKey.match(/^(.+?)-([A-Z]+)$/);
-        if (parts) {
-            const fileId = parts[1]; const cat = parts[2];
-            reloadBatchLayer(fileId, cat, null);
-        }
+        if (parts) reloadBatchLayer(parts[1], parts[2], null);
     }
 }
 
 function reloadBatchLayer(fileId, cat, filterCode) {
     const catKey = `${fileId}-${cat}`;
     if (!activeCategoryLayers[catKey]) return;
-    // Hapus layer lama
     map.removeLayer(activeCategoryLayers[catKey]);
     delete activeCategoryLayers[catKey];
     const geoData = cachedGeoJson[fileId]; if (!geoData || !geoData.features) return;
@@ -195,6 +143,35 @@ function reloadBatchLayer(fileId, cat, filterCode) {
     activeCategoryLayers[catKey] = layer;
 }
 
+// Helper: ekstrak identifier rute dari nama aset
+// Contoh: "ODP-KLJ-FA/01 DS 01 (13-14)" → ["KLJ-FA/01", "FA/01", "KLJ"]
+// Sehingga kabel "DS-KLJ-FA/01" juga bisa ditemukan saat cari ODP
+function extractRouteIdentifiers(name) {
+    if (!name) return [];
+    const ids = [name]; // selalu include nama asli
+    // Hapus prefix tipe (ODP-, ODC-, DS-, TIANG-, TL-)
+    const withoutPrefix = name.replace(/^(ODP|ODC|DS|TIANG|TL|PS|OPD)-/i, '').trim();
+    if (withoutPrefix && withoutPrefix !== name) ids.push(withoutPrefix);
+    // Ekstrak pola FA/XX atau area-FA/XX
+    const faMatch = name.match(/([A-Z]{2,4}-FA\/\d+|FA\/\d+)/i);
+    if (faMatch) ids.push(faMatch[0].toUpperCase());
+    return [...new Set(ids.map(s => s.toUpperCase()))];
+}
+
+// Cek apakah feature cocok dengan query pencarian (termasuk rute terkait)
+function featureMatchesQuery(f, query) {
+    if (!f.properties || !f.properties.name) return false;
+    const name = f.properties.name.toUpperCase();
+    const desc = (f.properties.description || '').toUpperCase();
+    // Match langsung
+    if (name.includes(query) || desc.includes(query)) return true;
+    // Match via route identifier (cari kabel terkait saat cari ODP)
+    const ids = extractRouteIdentifiers(query);
+    for (const id of ids) {
+        if (id.length >= 4 && (name.includes(id) || desc.includes(id))) return true;
+    }
+    return false;
+}
 
 function syncFirebaseData() {
     db.collection("employees").onSnapshot((snapshot) => {
@@ -685,48 +662,55 @@ function cariTitikAset() {
 
     // ==============================================
     // SMART SEARCH ENGINE
-    // Logika: Cari nama yang cocok, lalu cari juga
-    // semua aset yang berada dalam JALUR / GRUP yang sama.
-    // Contoh: Cari "FA 12" → tampilkan semua ODP, ODC,
-    // Tiang, dan Kabel yang namanya mengandung "FA 12"
+    // Menggunakan featureMatchesQuery untuk mencocokkan
+    // tidak hanya nama persis, tapi juga rute terkait.
+    // Cari "ODP-KLJ-FA/01" → kabel "DS-KLJ-FA/01" juga muncul
+    // karena keduanya berbagi identifier "KLJ-FA/01"
     // ==============================================
+    let allBounds = L.latLngBounds();
+
     for (let fileId in cachedGeoJson) {
         let geoData = cachedGeoJson[fileId];
         if (!geoData.features) continue;
 
-        // Cek apakah ada minimal 1 fitur yang namanya cocok
-        const anyMatch = geoData.features.some(f => f.properties && f.properties.name && f.properties.name.toUpperCase().includes(input));
+        // Cek apakah ada minimal 1 fitur yang cocok (direct atau route-aware)
+        const anyMatch = geoData.features.some(f => featureMatchesQuery(f, input));
         if (!anyMatch) continue;
 
         found = true;
         openedFiles.set(fileId, geoData.fileName || "Database KML");
 
-        // Expand card
-        let body = document.getElementById(`kml-body-${fileId}`); let chevron = document.getElementById(`kml-chevron-${fileId}`);
+        // Expand card di sidebar
+        let body = document.getElementById(`kml-body-${fileId}`);
+        let chevron = document.getElementById(`kml-chevron-${fileId}`);
         if (body && body.style.display === 'none') { body.style.display = 'block'; if (chevron) chevron.style.transform = "rotate(180deg)"; }
 
-        // Aktifkan SEMUA kategori yang relevan (seluruh hierarki distribusi)
-        // ODC -> ODP -> TIANG LISTRIK -> TIANG TELKOM -> JALUR KABEL
+        // Aktifkan SEMUA kategori dalam hierarki distribusi: ODC → ODP → TL → TIANG → KABEL
         ['ODC', 'ODP', 'TL', 'TIANG', 'KABEL'].forEach(cat => {
-            // Cek apakah kategori ini punya fitur yang cocok
-            const hasRelevant = geoData.features.some(f => getFeatureCategory(f) === cat && f.properties && f.properties.name && f.properties.name.toUpperCase().includes(input));
-            if (!hasRelevant) return;
+            // Filter fitur kategori ini yang cocok dengan query (route-aware)
+            const matchedFeatures = geoData.features.filter(f =>
+                getFeatureCategory(f) === cat && featureMatchesQuery(f, input)
+            );
+            if (matchedFeatures.length === 0) return;
 
+            // Tandai parent checkbox
             let parentChk = document.getElementById(`chk-${fileId}-${cat}`);
-            if (parentChk && !parentChk.checked) { parentChk.checked = true; }
+            if (parentChk) parentChk.checked = true;
 
-            // Buat layer khusus hanya untuk fitur yang cocok (override batch)
+            // Replace batch layer dengan hasil filter pencarian
             const catKey = `${fileId}-${cat}`;
             if (activeCategoryLayers[catKey]) { map.removeLayer(activeCategoryLayers[catKey]); delete activeCategoryLayers[catKey]; }
-
-            const matchedFeatures = geoData.features.filter(f => getFeatureCategory(f) === cat && f.properties && f.properties.name && f.properties.name.toUpperCase().includes(input));
-            if (matchedFeatures.length === 0) return;
 
             const layer = createBatchLayer(fileId, cat, matchedFeatures);
             layer.addTo(map);
             activeCategoryLayers[catKey] = layer;
 
-            // Ambil target untuk fly-to (prioritas ODP/ODC)
+            // Kumpulkan bounds untuk zoom
+            if (layer.getBounds && layer.getBounds().isValid()) {
+                allBounds.extend(layer.getBounds());
+            }
+
+            // Simpan target layer untuk popup (prioritas ODP > ODC > lainnya)
             if (!targetLeafletLayer && (cat === 'ODP' || cat === 'ODC')) {
                 layer.eachLayer(l => { if (!targetLeafletLayer) targetLeafletLayer = l; });
             } else if (!targetLeafletLayer) {
@@ -735,15 +719,18 @@ function cariTitikAset() {
         });
     }
 
-    if (found && targetLeafletLayer) {
+    if (found) {
         if (openedFiles.size > 0) showActiveKmlToast(openedFiles);
-        if (targetLeafletLayer.getBounds) { map.flyToBounds(targetLeafletLayer.getBounds(), { maxZoom: 19 }); }
-        else if (targetLeafletLayer.getLatLng) { map.flyTo(targetLeafletLayer.getLatLng(), 19); }
-        if (targetLeafletLayer.openPopup) targetLeafletLayer.openPopup();
-    } else if (found) {
-        if (openedFiles.size > 0) showActiveKmlToast(openedFiles);
+        // Zoom ke area yang mencakup semua hasil (ODP + kabel sekaligus)
+        if (allBounds.isValid()) {
+            map.flyToBounds(allBounds, { padding: [40, 40], maxZoom: 19 });
+        }
+        // Buka popup pada ODP/ODC yang ditemukan
+        if (targetLeafletLayer && targetLeafletLayer.openPopup) {
+            setTimeout(() => targetLeafletLayer.openPopup(), 800);
+        }
     }
-    if (!found) alert("Aset '" + input + "' tidak ditemukan di database KML.");
+    if (!found) alert("Aset '" + rawInput + "' tidak ditemukan di database KML.");
 }
 
 document.getElementById('search-aset').addEventListener('keypress', (e) => { if (e.key === 'Enter') cariTitikAset(); });
