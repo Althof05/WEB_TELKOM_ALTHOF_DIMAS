@@ -101,9 +101,12 @@
                         <!-- PANEL FILTER DAERAH PETA -->
                         <div class="info-card" id="map-filter-panel"
                             style="border-left: 4px solid #ff9800; pointer-events: auto; background: rgba(255,255,255,0.95); backdrop-filter: blur(5px); margin-bottom: 0; padding: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); width: 220px;">
-                            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:5px;">
-                                <div class="info-title" style="color: #e65100; font-size: 10px; margin:0;">🗺️ FILTER DAERAH</div>
-                                <span id="filter-active-badge" style="display:none; background:#e65100; color:white; font-size:8px; font-weight:bold; padding:2px 8px; border-radius:10px; animation: pulse 1.5s infinite;"></span>
+                            <div
+                                style="display:flex; align-items:center; justify-content:space-between; margin-bottom:5px;">
+                                <div class="info-title" style="color: #e65100; font-size: 10px; margin:0;">🗺️ FILTER
+                                    DAERAH</div>
+                                <span id="filter-active-badge"
+                                    style="display:none; background:#e65100; color:white; font-size:8px; font-weight:bold; padding:2px 8px; border-radius:10px; animation: pulse 1.5s infinite;"></span>
                             </div>
                             <div style="display:flex; gap:4px;">
                                 <input type="text" id="map-filter-input" placeholder="Ketik kode (KLJ, MLG...)"
@@ -112,10 +115,12 @@
                                     onkeypress="if(event.key==='Enter') applyMapFilter()">
                                 <button onclick="applyMapFilter()" title="Terapkan Filter (Enter)"
                                     style="background:#e65100; color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer; font-weight:bold; font-size:14px; transition:0.2s;"
-                                    onmouseover="this.style.opacity='0.8'" onmouseout="this.style.opacity='1'">↵</button>
+                                    onmouseover="this.style.opacity='0.8'"
+                                    onmouseout="this.style.opacity='1'">↵</button>
                             </div>
                             <button onclick="clearMapFilter()" id="btn-clear-filter"
-                                style="display:none; width:100%; margin-top:6px; background:#fff3e0; color:#e65100; border:1px solid #ff9800; padding:5px; border-radius:4px; cursor:pointer; font-size:10px; font-weight:bold;">✕ Hapus Filter — Tampilkan Semua</button>
+                                style="display:none; width:100%; margin-top:6px; background:#fff3e0; color:#e65100; border:1px solid #ff9800; padding:5px; border-radius:4px; cursor:pointer; font-size:10px; font-weight:bold;">✕
+                                Hapus Filter — Tampilkan Semua</button>
                         </div>
                     </div>
 

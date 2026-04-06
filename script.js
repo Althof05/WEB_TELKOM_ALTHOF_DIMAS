@@ -163,12 +163,22 @@ function featureMatchesQuery(f, query) {
     if (!f.properties || !f.properties.name) return false;
     const name = f.properties.name.toUpperCase();
     const desc = (f.properties.description || '').toUpperCase();
-    // Match langsung
+    
+    // Match langsung string penuh
     if (name.includes(query) || desc.includes(query)) return true;
-    // Match via route identifier (cari kabel terkait saat cari ODP)
+    
+    // Match via route identifier (cari kabel terkait)
     const ids = extractRouteIdentifiers(query);
     for (const id of ids) {
-        if (id.length >= 4 && (name.includes(id) || desc.includes(id))) return true;
+        if (id.length < 3) continue;
+        
+        // Buat regex boundary agar tidak over-matching 
+        // Contoh: cari "FA" TIDAK AKAN cocok dengan "FAC"
+        // cari "FAC" TIDAK AKAN cocok dengan "FACILITY"
+        const escapedId = id.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
+        const regex = new RegExp(escapedId + "(?![A-Z])", "i");
+        
+        if (regex.test(name) || regex.test(desc)) return true;
     }
     return false;
 }
