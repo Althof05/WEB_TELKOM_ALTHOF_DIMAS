@@ -143,45 +143,54 @@ function reloadBatchLayer(fileId, cat, filterCode) {
     activeCategoryLayers[catKey] = layer;
 }
 
-// Helper: ekstrak identifier rute dari nama aset
-// Akan membersihkan prefix tapi menyimpan berbagai kemungkinan identifier
+// Helper: ekstrak identifier rute dengan memisahkan pencarian spesifik (ODP/ODC) vs baseroute (KABEL/TIANG)
 function extractRouteIdentifiers(name) {
-    if (!name) return [];
-    const ids = [name]; // selalu include nama asli
-    
-    // Hapus prefix tipe
+    if (!name) return { exact: [], base: [] };
     const withoutPrefix = name.replace(/^(ODP|ODC|DS|TIANG|TL|PS|OPD)[\-\s\/]+/i, '').trim();
-    if (withoutPrefix && withoutPrefix !== name) ids.push(withoutPrefix);
     
-    // Ekstrak pola FA XX secara spesifik
-    const faMatch = name.match(/FA[\-\s\/]*\d+/i);
-    if (faMatch) ids.push(faMatch[0].toUpperCase());
+    // Exact: harus sama persis dengan angka spesifiknya (digunakan untuk memfilter sesama ODP/ODC)
+    const exact = [name];
+    if (withoutPrefix !== name) exact.push(withoutPrefix);
+    const faMatch = withoutPrefix.match(/FA[\-\s\/]*\d+/i);
+    if (faMatch) exact.push(faMatch[0]);
+
+    // Base: ambil jalur utamanya saja tanpa angka (digunakan untuk memanggil JALUR KABEL yang tidak punya indikator /12)
+    const base = [...exact];
+    const faIndex = withoutPrefix.toUpperCase().indexOf('FA');
+    if (faIndex !== -1) {
+        // Ekstrak string dari awal sampai kata "FA" (contoh: "KLJ-FA")
+        const bPattern = withoutPrefix.substring(0, faIndex + 2);
+        if (!base.includes(bPattern)) base.push(bPattern);
+    }
     
-    return [...new Set(ids.map(s => s.toUpperCase().trim()))];
+    return { 
+        exact: [...new Set(exact.map(s => s.toUpperCase().trim()))],
+        base: [...new Set(base.map(s => s.toUpperCase().trim()))]
+    };
 }
 
-// Buat regex pencarian yang fleksibel 
-// (spasi, strip, garis miring dianggap sama)
-// Contoh: "FA 12" -> cocok dengan "FA/12" atau "FA-12"
+// Buat regex pencarian yang fleksibel (spasi, strip, garis miring dianggap sama)
 function buildFuzzyRegex(str) {
     let escaped = str.trim().toUpperCase().replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
     let fuzzy = escaped.replace(/(\\\/|\\-|\s)+/g, '[\\s\\/\\-_]*');
     return new RegExp(fuzzy + "(?![A-Z])", "i");
 }
 
-// Cek apakah feature cocok dengan query pencarian (termasuk rute terkait)
-function featureMatchesQuery(f, query) {
+// Cek apakah feature cocok dengan query pencarian berdasarkan kategorinya
+function featureMatchesQuery(f, query, cat) {
     if (!f.properties || !f.properties.name) return false;
     const name = f.properties.name.toUpperCase();
     const desc = (f.properties.description || '').toUpperCase();
     
-    // Match via fuzzy regex pada string utuh
     const queryRegex = buildFuzzyRegex(query);
     if (queryRegex.test(name) || queryRegex.test(desc)) return true;
     
-    // Match via route identifier (agar kabel ODP yg sesuai ikut tampil)
-    const ids = extractRouteIdentifiers(query);
-    for (const id of ids) {
+    const identifiers = extractRouteIdentifiers(query);
+    // Jika mencari kabel atau tiang distribusi, gunakan base route. 
+    // Jika mencari ODP/ODC spesifik, gunakan exact route agar tidak tercampur.
+    const idsToUse = (cat === 'KABEL' || cat === 'TIANG' || cat === 'TL') ? identifiers.base : identifiers.exact;
+    
+    for (const id of idsToUse) {
         if (id.length < 3) continue;
         const routeRegex = buildFuzzyRegex(id);
         if (routeRegex.test(name) || routeRegex.test(desc)) return true;
@@ -713,7 +722,7 @@ function cariTitikAset() {
         targetCategories.forEach(cat => {
             // Filter fitur kategori ini yang cocok dengan query (route-aware)
             const matchedFeatures = geoData.features.filter(f =>
-                getFeatureCategory(f) === cat && featureMatchesQuery(f, input)
+                getFeatureCategory(f) === cat && featureMatchesQuery(f, input, cat)
             );
             if (matchedFeatures.length === 0) return;
 
