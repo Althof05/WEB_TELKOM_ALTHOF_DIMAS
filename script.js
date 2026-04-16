@@ -151,9 +151,7 @@ function extractRouteIdentifiers(name) {
     // Exact: harus sama persis dengan angka spesifiknya (digunakan untuk memfilter sesama ODP/ODC)
     const exact = [name];
     if (withoutPrefix !== name) exact.push(withoutPrefix);
-    const faMatch = withoutPrefix.match(/FA[\-\s\/]*\d+/i);
-    if (faMatch) exact.push(faMatch[0]);
-
+    
     // Base: ambil jalur utamanya saja tanpa angka (digunakan untuk memanggil JALUR KABEL yang tidak punya indikator /12)
     const base = [...exact];
     const faIndex = withoutPrefix.toUpperCase().indexOf('FA');
@@ -694,22 +692,24 @@ function cariTitikAset() {
     var input = rawInput.toUpperCase();
     var found = false; var targetLeafletLayer = null; let openedFiles = new Map();
 
-    // ==============================================
-    // SMART SEARCH ENGINE
-    // Menggunakan featureMatchesQuery untuk mencocokkan
-    // tidak hanya nama persis, tapi juga rute terkait.
-    // Cari "ODP-KLJ-FA/01" → kabel "DS-KLJ-FA/01" juga muncul
-    // karena keduanya berbagi identifier "KLJ-FA/01"
-    // ==============================================
-    let allBounds = L.latLngBounds();
-
     for (let fileId in cachedGeoJson) {
         let geoData = cachedGeoJson[fileId];
         if (!geoData.features) continue;
 
-        // Cek apakah ada minimal 1 fitur yang cocok (direct atau route-aware)
+        // Cek apakah ada minimal 1 fitur yang cocok secara fuzzy
         const anyMatch = geoData.features.some(f => featureMatchesQuery(f, input));
-        if (!anyMatch) continue;
+        if (!anyMatch) {
+            ['TIANG', 'TL', 'ODP', 'ODC', 'KABEL'].forEach(cat => {
+                let parentChk = document.getElementById(`chk-${fileId}-${cat}`);
+                if (parentChk) parentChk.checked = false;
+                let catKey = `${fileId}-${cat}`;
+                if (activeCategoryLayers[catKey]) {
+                    map.removeLayer(activeCategoryLayers[catKey]);
+                    delete activeCategoryLayers[catKey];
+                }
+            });
+            continue;
+        }
 
         found = true;
         openedFiles.set(fileId, geoData.fileName || "Database KML");
@@ -719,57 +719,53 @@ function cariTitikAset() {
         let chevron = document.getElementById(`kml-chevron-${fileId}`);
         if (body && body.style.display === 'none') { body.style.display = 'block'; if (chevron) chevron.style.transform = "rotate(180deg)"; }
 
-        // Batasi kategori berdasarkan prefix pencarian agar lebih presisi
-        let targetCategories = ['ODC', 'ODP', 'TL', 'TIANG', 'KABEL'];
-        if (input.startsWith('ODP-') || input.startsWith('ODP ')) {
-            targetCategories = ['ODP', 'KABEL']; // Hanya ODP dan Kabel
-        } else if (input.startsWith('ODC-') || input.startsWith('ODC ')) {
-            targetCategories = ['ODC', 'KABEL']; // Hanya ODC dan Kabel
-        }
-
-        // Aktifkan kategori dalam hierarki distribusi yang relevan
-        targetCategories.forEach(cat => {
-            // Filter fitur kategori ini yang cocok dengan query (route-aware)
-            const matchedFeatures = geoData.features.filter(f =>
-                getFeatureCategory(f) === cat && featureMatchesQuery(f, input, cat)
-            );
-            if (matchedFeatures.length === 0) return;
-
-            // Tandai parent checkbox
+        // ==============================================
+        // AKTIFKAN SELURUH ISI FILE 
+        // Permintaan user: otomatis nyalakan semua (ODC, ODP, Kabel, dll) saat pencarian
+        // ==============================================
+        const allCats = ['ODC', 'ODP', 'TL', 'TIANG', 'KABEL'];
+        
+        allCats.forEach(cat => {
+            // 1. Pastikan checkbox kategori dicentang
             let parentChk = document.getElementById(`chk-${fileId}-${cat}`);
-            if (parentChk) parentChk.checked = true;
-
-            // Replace batch layer dengan hasil filter pencarian
-            const catKey = `${fileId}-${cat}`;
-            if (activeCategoryLayers[catKey]) { map.removeLayer(activeCategoryLayers[catKey]); delete activeCategoryLayers[catKey]; }
-
-            const layer = createBatchLayer(fileId, cat, matchedFeatures);
-            layer.addTo(map);
-            activeCategoryLayers[catKey] = layer;
-
-            // Kumpulkan bounds untuk zoom
-            if (layer.getBounds && layer.getBounds().isValid()) {
-                allBounds.extend(layer.getBounds());
+            if (parentChk) {
+                parentChk.checked = true;
             }
-
-            // Simpan target layer untuk popup (prioritas ODP > ODC > lainnya)
-            if (!targetLeafletLayer && (cat === 'ODP' || cat === 'ODC')) {
-                layer.eachLayer(l => { if (!targetLeafletLayer) targetLeafletLayer = l; });
-            } else if (!targetLeafletLayer) {
-                layer.eachLayer(l => { if (!targetLeafletLayer) targetLeafletLayer = l; });
+            
+            // 2. Tampilkan/Aktifkan layer secara penuh (tanpa filter sepotong)
+            toggleCategoryBatch(fileId, cat, true); // true = skip zoom otomatis agar kita bisa zoom ke ODP
+            
+            // 3. Cari secara spesifik layer Leaflet dari ODP/Aset yang dicari untuk titik Zoom
+            let catKey = `${fileId}-${cat}`;
+            let layerGroup = activeCategoryLayers[catKey];
+            if (layerGroup) {
+                layerGroup.eachLayer(l => {
+                    if (l.feature && featureMatchesQuery(l.feature, input, cat)) {
+                        // Prioritaskan ODP atau ODC sebagai target fokus utama (daripada sekadar kabel)
+                        if (!targetLeafletLayer && (cat === 'ODP' || cat === 'ODC')) {
+                            targetLeafletLayer = l;
+                        } else if (!targetLeafletLayer) {
+                            targetLeafletLayer = l;
+                        }
+                    }
+                });
             }
         });
     }
 
-    if (found) {
+    if (found && targetLeafletLayer) {
         if (openedFiles.size > 0) showActiveKmlToast(openedFiles);
-        // Zoom ke area yang mencakup semua hasil (ODP + kabel sekaligus)
-        if (allBounds.isValid()) {
-            map.flyToBounds(allBounds, { padding: [40, 40], maxZoom: 19 });
-        }
-        // Buka popup pada ODP/ODC yang ditemukan
-        if (targetLeafletLayer && targetLeafletLayer.openPopup) {
-            setTimeout(() => targetLeafletLayer.openPopup(), 800);
+        
+        let latlng = targetLeafletLayer.getLatLng ? targetLeafletLayer.getLatLng() : 
+                     (targetLeafletLayer.getBounds ? targetLeafletLayer.getBounds().getCenter() : null);
+                     
+        if (latlng) {
+            map.flyTo(latlng, 19);
+            setTimeout(() => {
+                if (targetLeafletLayer.openPopup) targetLeafletLayer.openPopup();
+            }, 800);
+        } else if (targetLeafletLayer.getBounds) {
+            map.flyToBounds(targetLeafletLayer.getBounds(), { maxZoom: 19 });
         }
     }
     if (!found) alert("Aset '" + rawInput + "' tidak ditemukan di database KML.");
